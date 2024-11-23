@@ -3,6 +3,7 @@ import sqlite3
 from bs4 import BeautifulSoup
 from Property import Property
 
+## Pull properties from site
 def scrape():
     # Set up the SQLite database
     conn = sqlite3.connect('properties.db')
