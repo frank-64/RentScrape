@@ -1,71 +1,60 @@
 import requests
-import sqlite3
 from bs4 import BeautifulSoup
 from Property import Property
+from properties_db import PropertiesDB
+from emails import send_property_email_update
+import asyncio
+
+def get_text(div, class_name):
+    """Helper function to extract text from a div with a specific class, or return None if not found."""
+    return div.find('div', class_=class_name).text.strip() if div.find('div', class_=class_name) else None
+
+def get_last_word(div, class_name):
+    """Helper function to extract the last word from a div's text (e.g., number of rooms)."""
+    text = get_text(div, class_name)
+    return text.split()[-1] if text else None
+
+def extract_property_details_from_div(div):
+    # Extract details using helper functions
+    address = get_text(div, 'p_address') 
+    price = get_text(div, 'p_price')
+    description = get_text(div, 'p_description')
+    num_beds = get_last_word(div, 'num_bed')
+    num_living_rooms = get_last_word(div, 'num_rec')
+    num_baths = get_last_word(div, 'num_bath')
+    link = div.find('a')['href']
+
+    # Get the image URL
+    img_tag = div.find('div', class_='mainImg').find('img') if div.find('div', class_='mainImg') else None
+    img_url = img_tag['src'] if img_tag else None
+    
+    # Check for 'let agreed' status
+    let_agreed = bool(div.find('div', class_='let_agreed'))
+
+    return Property(price, address, description, img_url, let_agreed, num_beds, num_baths, num_living_rooms, link)
 
 ## Pull properties from site
-def scrape():
-    # Set up the SQLite database
-    conn = sqlite3.connect('properties.db')
-    cursor = conn.cursor()
+async def scrape(db_name='properties.db'):
+    # Initiate Properties DB
+    with PropertiesDB(db_name) as db:
+        db.create_table()
 
-    # Create a table to store the properties if it doesn't already exist
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS properties (
-        id INTEGER PRIMARY KEY,
-        address TEXT,
-        price TEXT,
-        description TEXT,
-        num_beds INTEGER,
-        num_living_rooms INTEGER,
-        num_baths INTEGER,
-        image TEXT,
-        let_agreed BOOLEAN
-    )
-    ''')
+        url = 'https://www.hackney-leigh.co.uk/properties-to-let/orderby-lp/'
+        response = requests.get(url)
 
-    url = 'https://www.hackney-leigh.co.uk/properties-to-let/orderby-lp/'
+        soup = BeautifulSoup(response.content, 'html.parser')
 
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
+        property_listings_divs = soup.find_all('div', class_='propertyListing')
 
-    property_listings_divs = soup.find_all('div', class_='propertyListing')
+        for div in property_listings_divs:
+            property = extract_property_details_from_div(div)
 
-    for div in property_listings_divs:
-        # Find the address
-        address = div.find('div', class_='p_address').text.strip() if div.find('div', class_='p_address') else None
+            if db.has_duplicate_address(property.address):
+                continue
+            db.add_property(property)
 
-        cursor.execute("SELECT 1 FROM properties WHERE address = ?", (address,))
-        if cursor.fetchone():
-            print(f"Property with address '{address}' already exists. Skipping.")
-            continue  # Skip this property if address exists in the database
-        
-        # Find the price
-        price = div.find('div', class_='p_price').text.strip() if div.find('div', class_='p_price') else None
-        
-        # Find the description
-        description = div.find('div', class_='p_description').text.strip() if div.find('div', class_='p_description') else None
+            # if(not property.let_agreed):
+            #     await send_property_email_update(property)
 
-        # Get num of beds, baths and living rooms: e.g. of string is ' 2' hence splice
-        num_beds = div.find('div', class_='num_bed').text.strip().split()[-1] if div.find('div', class_='num_bed') else None
-        num_living_rooms = div.find('div', class_='num_rec').text.strip().split()[-1] if div.find('div', class_='num_rec') else None
-        num_baths = div.find('div', class_='num_bath').text.strip().split()[-1] if div.find('div', class_='num_bath') else None
+            print(f"New property with address: {property.address} added.")
 
-        # Get the image div
-        main_img_div = div.find('div', class_='mainImg')
-
-        img_tag = main_img_div.find('img')  # Find the <img> tag inside the div
-        # Get the image URL
-        img_url = img_tag['src'] if img_tag else None 
-
-        let_agreed = bool(div.find('div', class_='let_agreed'))
-
-        cursor.execute('''
-        INSERT INTO properties (address, price, description, num_beds, num_living_rooms, num_baths, image, let_agreed)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (address, price, description, num_beds, num_living_rooms, num_baths, img_url, let_agreed))
-
-        print(f"New property with address: {address} added.")
-
-    conn.commit()
-    conn.close()
