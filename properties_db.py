@@ -1,4 +1,6 @@
 from sqlite_db import SQLiteDB
+import logging
+
 class PropertiesDB(SQLiteDB): 
     def __init__(self, db_name):
         super().__init__(db_name)
@@ -23,7 +25,7 @@ class PropertiesDB(SQLiteDB):
     def has_duplicate_address(self, address):
         result = self.fetch_one("SELECT 1 FROM properties WHERE address = ?", (address,))
         if result:
-            print(f"Property with address '{address}' already exists. Skipping.")
+            logging.info(f"Property with address '{address}' already exists. Skipping.")
             return True
         return False
 

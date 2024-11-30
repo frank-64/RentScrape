@@ -3,7 +3,8 @@ from bs4 import BeautifulSoup
 from Property import Property
 from properties_db import PropertiesDB
 from emails import send_property_email_update
-import asyncio
+import os
+import logging
 
 def get_text(div, class_name):
     """Helper function to extract text from a div with a specific class, or return None if not found."""
@@ -33,8 +34,20 @@ def extract_property_details_from_div(div):
 
     return Property(price, address, description, img_url, let_agreed, num_beds, num_baths, num_living_rooms, link)
 
+# create the database connection
+def get_db_path():
+    if 'AZURE' in os.environ:
+        # Running in Azure
+        db_file_path = os.path.join(os.environ['HOME'], 'site', 'wwwroot', 'properties.db')
+    else:
+        # Running locally
+        db_file_path = os.path.join(os.getcwd(), 'properties.db')
+    
+    logging.info(f"Database path: {db_file_path}")
+    return db_file_path
+
 ## Pull properties from site
-async def scrape(db_name='properties.db'):
+async def scrape(db_name=get_db_path()):
     # Initiate Properties DB
     with PropertiesDB(db_name) as db:
         db.create_table()
@@ -53,8 +66,8 @@ async def scrape(db_name='properties.db'):
                 continue
             db.add_property(property)
 
-            # if(not property.let_agreed):
-            #     await send_property_email_update(property)
+            if(not property.let_agreed and 'AZURE' in os.environ):
+                await send_property_email_update(property)
 
-            print(f"New property with address: {property.address} added.")
+            logging.info(f"New property with address: {property.address} added.")
 

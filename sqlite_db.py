@@ -26,7 +26,3 @@ class SQLiteDB:
     def fetch_all(self, query, params=()):
         self.cursor.execute(query, params)
         return self.cursor.fetchall()
-
-    def destroy(self):
-        if self.db_name != ":memory:" and os.path.exists(self.db_name):
-            os.remove(self.db_name)
