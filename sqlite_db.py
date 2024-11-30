@@ -1,5 +1,5 @@
 import sqlite3
-import os
+import logging
 
 class SQLiteDB:
     def __init__(self, db_name):
@@ -12,7 +12,7 @@ class SQLiteDB:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
-            print(f"An error occurred: {exc_val}")
+            logging.info(f"An error occurred: {exc_val}")
         self.conn.commit()
         self.conn.close()
 

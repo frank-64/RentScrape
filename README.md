@@ -17,6 +17,6 @@ I then tried Azure SQL Server as it was free under a certain usage a month, howe
 I then opted back to `SQLite3`, got rid of all the Azure Functions and decided to Dockerise!
 
 This worked out so much better and took very little time to setup.
-I used Linux CRON utility to run the scraper every hour in the container.
+I used Python scheduling to call the scrape function each hour.
 
 Then I created a compose file to define a volume for the `properties.db` to sit, so if the container is starter/stopped it will persist.

@@ -12,10 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN mkdir -p /data
+RUN mkdir -p /var/log
 
-RUN echo "0 * * * * cd /app && /usr/local/bin/python /app/scrape.py >> /var/log/cron.log 2>&1" | crontab -
-
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+# Set the entrypoint to execute scrape.py directly
+CMD ["python", "/app/scrape.py"]

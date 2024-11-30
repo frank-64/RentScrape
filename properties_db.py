@@ -25,7 +25,7 @@ class PropertiesDB(SQLiteDB):
     def has_duplicate_address(self, address):
         result = self.fetch_one("SELECT 1 FROM properties WHERE address = ?", (address,))
         if result:
-            print(f"Property with address '{address}' already exists. Skipping.")
+            logging.info(f"Property with address '{address}' already exists. Skipping.")
             return True
         return False
 

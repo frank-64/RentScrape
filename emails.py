@@ -23,9 +23,9 @@ def send_property_email_update(propertyString):
         server.login(sender_email, password)
         text = msg.as_string()
         server.sendmail(sender_email, receiver_email, text)
-        print("Email sent successfully!")
+        logging.info("Email sent successfully!")
     except Exception as e:
-        print(f"Error: {e}")
+        logging.info(f"Error: {e}")
     finally:
         server.quit()
 

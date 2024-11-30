@@ -2,9 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 from Property import Property
 from properties_db import PropertiesDB
+import time
+import logging
+from datetime import datetime, timedelta
 from emails import send_property_email_update
 import os
-import logging
+import sys
+
 debug = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 def get_text(div, class_name):
@@ -63,11 +67,39 @@ def scrape(db_path=get_db_path()):
             if not property.let_agreed and not debug:
                 send_property_email_update(property)
 
-            print(f"New property with address: {property.address} added.")
+            logging.info(f"New property with address: {property.address} added.")
 
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("/var/log/scrape_scheduler.log"),  # Log to a file
+        logging.StreamHandler(sys.stdout)  # Log to stdout for Docker
+    ]
+)
 
 def main():
-    scrape()
+    logging.info("Starting scrape scheduler.")
+
+    interval_seconds = 3600
+
+    while True:
+        # Log the start time and next scheduled time
+        now = datetime.now()
+        next_run = now + timedelta(seconds=interval_seconds)
+        logging.info(f"Starting scrape. Next run scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')}.")
+
+        try:
+            # Run the scrape
+            scrape()
+            logging.info("Scrape completed successfully.")
+        except Exception as e:
+            logging.error(f"An error occurred during scrape: {e}")
+
+        # Wait for the next interval
+        time.sleep(interval_seconds)
 
 if __name__ == '__main__':
     main()
