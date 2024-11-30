@@ -1,5 +1,5 @@
 # Rent Scrape
-This project is a simple scraper that parsed a lettings agent website on a schedule and updates me of any new lettings via email.
+This project is a simple scraper that parses a lettings agent website on a schedule and updates me of any new lettings via email.
 
 I initiated this project as I was sick of seeing really good properties that were already 'let agreed' by the time I saw them.
 

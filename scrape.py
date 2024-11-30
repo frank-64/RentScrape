@@ -34,20 +34,8 @@ def extract_property_details_from_div(div):
 
     return Property(price, address, description, img_url, let_agreed, num_beds, num_baths, num_living_rooms, link)
 
-# create the database connection
-def get_db_path():
-    if 'AZURE' in os.environ:
-        # Running in Azure
-        db_file_path = os.path.join(os.environ['HOME'], 'site', 'wwwroot', 'properties.db')
-    else:
-        # Running locally
-        db_file_path = os.path.join(os.getcwd(), 'properties.db')
-    
-    logging.info(f"Database path: {db_file_path}")
-    return db_file_path
-
 ## Pull properties from site
-async def scrape(db_name=get_db_path()):
+def scrape(db_name='properties.db'):
     # Initiate Properties DB
     with PropertiesDB(db_name) as db:
         db.create_table()
@@ -66,8 +54,11 @@ async def scrape(db_name=get_db_path()):
                 continue
             db.add_property(property)
 
-            if(not property.let_agreed and 'AZURE' in os.environ):
-                await send_property_email_update(property)
+            debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+            if not property.let_agreed and not debug:
+                send_property_email_update(property)
 
-            logging.info(f"New property with address: {property.address} added.")
+            print(f"New property with address: {property.address} added.")
 
+
+scrape()

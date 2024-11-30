@@ -4,12 +4,11 @@ from email.mime.text import MIMEText
 import logging
 import os
 
-# Define your email sender and receiver
-sender_email = os.environ['SenderEmail']
-receiver_email = os.environ['ReceiverEmail']
-password = os.environ['EmailPass']
+def send_property_email_update(propertyString):
+    sender_email = os.environ['SenderEmail']
+    receiver_email = os.environ['ReceiverEmail']
+    password = os.environ['EmailPass']
 
-async def send_property_email_update(propertyString):
     # Create the email message
     msg = MIMEMultipart()
     msg['From'] = sender_email
@@ -24,9 +23,9 @@ async def send_property_email_update(propertyString):
         server.login(sender_email, password)
         text = msg.as_string()
         server.sendmail(sender_email, receiver_email, text)
-        logging.info("Email sent successfully!")
+        print("Email sent successfully!")
     except Exception as e:
-        logging.info(f"Error: {e}")
+        print(f"Error: {e}")
     finally:
         server.quit()
 
