@@ -11,3 +11,12 @@ I also used the `BeautifulSoup` scraping package before and I knew it was everyt
 Python Azure Functions was something new to me as I typically use them with .NET and C#, but I knew I needed them to run on schedule in Azure.
 
 I thought `SQLite3` would be perfect for a simple project like this, and it was locally. However, it cause issues once deployed in Azure due to way files are handled in Azure Functions directory. 
+
+I then tried Azure SQL Server as it was free under a certain usage a month, however, there were package issues with `pyodbc`, which is used for accessing the database.
+
+I then opted back to `SQLite3`, got rid of all the Azure Functions and decided to Dockerise!
+
+This worked out so much better and took very little time to setup.
+I used Linux CRON utility to run the scraper every hour in the container.
+
+Then I created a compose file to define a volume for the `properties.db` to sit, so if the container is starter/stopped it will persist.
