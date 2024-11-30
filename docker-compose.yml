@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  property-scraper:
+    build: .
+    volumes:
+      - properties-db:/data
+    env_file:
+      - prod.env
+    restart: always
+
+volumes:
+  properties-db:
+    driver: local

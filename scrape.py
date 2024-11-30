@@ -5,6 +5,7 @@ from properties_db import PropertiesDB
 from emails import send_property_email_update
 import os
 import logging
+debug = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 def get_text(div, class_name):
     """Helper function to extract text from a div with a specific class, or return None if not found."""
@@ -34,10 +35,15 @@ def extract_property_details_from_div(div):
 
     return Property(price, address, description, img_url, let_agreed, num_beds, num_baths, num_living_rooms, link)
 
+def get_db_path():
+    if debug:
+        return 'properties.db'
+    return '/data/properties.db'
+
 ## Pull properties from site
-def scrape(db_name='properties.db'):
+def scrape(db_path=get_db_path()):
     # Initiate Properties DB
-    with PropertiesDB(db_name) as db:
+    with PropertiesDB(db_path) as db:
         db.create_table()
 
         url = 'https://www.hackney-leigh.co.uk/properties-to-let/orderby-lp/'
@@ -54,11 +60,14 @@ def scrape(db_name='properties.db'):
                 continue
             db.add_property(property)
 
-            debug = os.environ.get('DEBUG', 'False').lower() == 'true'
             if not property.let_agreed and not debug:
                 send_property_email_update(property)
 
             print(f"New property with address: {property.address} added.")
 
 
-scrape()
+def main():
+    scrape()
+
+if __name__ == '__main__':
+    main()
